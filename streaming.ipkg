@@ -1,0 +1,32 @@
+package streaming
+
+authors    = "MarcelineVQ"
+version    = "0.0.1.0"
+readme     = "README.md"
+
+homepage   = "https://github.com/MarcelineVQ/idris2-streaming"
+sourceloc  = "https://github.com/MarcelineVQ/idris2-streaming.git"
+bugtracker = "https://github.com/MarcelineVQ/idris2-streaming/issues"
+
+license    = "CC0 (refer to LICENSE file)"
+brief      = "Effectful Streaming for Idris"
+
+modules = Streaming
+        , Streaming.API
+        , Streaming.Internal
+        
+        , Streaming.Streams
+        , Streaming.Bytes
+        
+        , Data.Functor.Of
+        , Data.Functor.Compose
+        , Data.Functor.Bifunctor
+        
+        , Data.Proxy
+        , Data.LazyList
+
+sourcedir = "src"
+
+main = Streaming
+
+depends = base, contrib, network, bytes
