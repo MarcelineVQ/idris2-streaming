@@ -26,7 +26,7 @@ byteFromFile handle = Build (\r,eff,step => bef handle r eff step)
       False <- fEOF file -- this doesn't seem to be set by the time I call again
         | True => pure (r ())
       Right c <- fGetChar file
-        | Left err => do print "file read error"
+        | Left err => do Prelude.printLn "file read error"
                          pure (r ())
       False <- fEOF file -- fEOF isn't setting correctly? so we check again
         | True => pure (r ())

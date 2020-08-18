@@ -14,6 +14,7 @@ cons : Monad m => a -> Stream (Of a) m r -> Stream (Of a) m r
 cons x str = wrap (x :> str)
 -- cons x str = Build (\r,eff,step => step (x :> streamFold r eff step str))
 
+export
 append : Monad m => Stream (Of a) m r -> Stream (Of a) m r -> Stream (Of a) m r
 append s1 s2 = Build (\r,eff,step => streamFold r eff (\(x :> y) => (streamFold r eff step s2)) s1)
 
@@ -89,7 +90,7 @@ yield x = cons x empty
 -- 'Each' of these could simply be Foldable if Foldable's foldr wasn't so strict
 
 export
-||| Preferred method of providing known list-like input to a Stream.
+||| Preferred method of providing List input to a Stream.
 each : Monad m => LazyList a -> Stream (Of a) m ()
 each [] = empty
 each (x :: xs) = cons x (each xs)

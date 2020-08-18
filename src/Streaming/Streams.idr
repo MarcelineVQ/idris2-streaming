@@ -2,6 +2,7 @@ module Streaming.Streams
 
 import Streaming.Internal
 import Streaming.API
+
 import Data.Functor.Of
 
 import System.File
@@ -61,7 +62,7 @@ ofHandle handle = Build (\r,eff,step => bef handle r eff step)
       False <- fEOF file
         | True => r <$> pclose file
       Right c <- fGetChar file
-        | Left err => do print "file read error"
+        | Left err => do Prelude.print "file read error"
                          r <$> pclose file
       pure $ step (c :> bef file r eff step)
 
