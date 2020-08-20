@@ -9,6 +9,7 @@ import System.File
 
 import Data.Strings
 
+
 {-
 The intent of this module is to provide common stream sources, it's not very
 thought-through at the moment.
@@ -35,7 +36,18 @@ stdoutLn str = do
   streamFold pure join (\(s :> act) => putStrLn s *> act) str
   fflush stdout
 
+export
+stdoutChr : HasIO io => Stream (Of Char) io () -> io ()
+stdoutChr str = do
+  streamFold pure join (\(s :> act) => putChar s *> act) str
+  fflush stdout
 
+export
+stdoutChrLn : HasIO io => Stream (Of Char) io () -> io ()
+stdoutChrLn str = do
+  streamFold pure join (\(s :> act) => putChar s *> act) str
+  putChar '\n'
+  fflush stdout
 
 {-
 
@@ -68,12 +80,12 @@ ofHandle handle = Build (\r,eff,step => bef handle r eff step)
 
 foobaloo1 : IO ()
 foobaloo1 = do
-  z <- the (IO (Of Int ())) (sum $ map cast $ take 3 stdinLn)
+  z <- the (IO (Of Int ())) (sum $ mapv cast $ take 3 stdinLn)
   printLn z
   
 
 foobaloo2 : IO ()
-foobaloo2 = stdoutLn $ map toUpper $ take 2 stdinLn
+foobaloo2 = stdoutLn $ mapv toUpper $ take 2 stdinLn
 
 foobaloo3 : IO ()
-foobaloo3 = stdoutLn $ map toUpper $ stdinLn
+foobaloo3 = stdoutLn $ mapv toUpper $ stdinLn

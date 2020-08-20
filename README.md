@@ -5,7 +5,10 @@ This package provides a central idea and tool for effectful streaming. Heavily b
 
 This isn't a Total streaming library and doesn't make use of more advanced idris features. Totality would be great but unlikely since it imposes restrictions of the Functor's/Monad's we're able to make use of.
 
-On top of general streaming, this package's intent is to provide a basis to stream bytes from sources like files or network. To that end there is a Streaming.Bytes module intended to be used with the [bytes](https://github.com/MarcelineVQ/idris2-bytes) package but some Bits8 methods will be available as well.
+On top of general streaming, this package's intent is to provide a basis to stream bytes from sources like files or network. To that end there is a Streaming.Bytes module currently intended to be used with the [bytes](https://github.com/MarcelineVQ/idris2-bytes) package but Bits8 methods will be available as well.
+Please note that bytes is currently required to be installed to use this library even though we don't make heavy use of it just yet.
+
+Examples are available as a package in the `examples` directory.
 
 TODO
 ----

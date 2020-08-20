@@ -1,7 +1,7 @@
 package streaming
 
 authors    = "MarcelineVQ"
-version    = "0.0.1.0"
+version    = "0.1.2.0"
 readme     = "README.md"
 
 homepage   = "https://github.com/MarcelineVQ/idris2-streaming"
@@ -14,6 +14,7 @@ brief      = "Effectful Streaming for Idris"
 modules = Streaming
         , Streaming.API
         , Streaming.Internal
+        , Streaming.Test
         
         , Streaming.Streams
         , Streaming.Bytes
@@ -24,6 +25,8 @@ modules = Streaming
         
         , Data.Proxy
         , Data.LazyList
+        
+        , Util -- Don't expect this one to always exist.
 
 sourcedir = "src"
 

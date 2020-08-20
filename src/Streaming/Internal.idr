@@ -13,16 +13,17 @@ import public Data.Functor.Compose
 ||| A neat bonus to the Build constructor is that we don't have to 'case' as
 ||| often when writing our functions because we can just farm out to Build which
 ||| streamFold will eventually case for us.
+||| The Linearities are to satisfy HasIO, they might not stay.
 public export
 data Stream : (f : Type -> Type) -> (m : Type -> Type) -> Type -> Type where
-  Return : r -> Stream f m r
-  Effect : m (Stream f m r) -> Stream f m r
-  Step : f (Stream f m r) -> Stream f m r
+  Return : (1 _ : r) -> Stream f m r
+  Effect : (1 _ : m (Stream f m r)) -> Stream f m r
+  Step : (1 _ : f (Stream f m r)) -> Stream f m r
   ||| Fusion constructor
   ||| We don't have a serious rewrite system in idris2 yet so this does the job
   ||| of fusing as long as we're careful about using streamFold and Build
   ||| whenever we can.
-  Build : (forall b. (r -> b) -> (m b -> b) -> (f b -> b) -> b) -> Stream f m r
+  Build : (1 _ : (forall b. (r -> b) -> (m b -> b) -> (f b -> b) -> b)) -> Stream f m r
 
 %name Streaming.Internal.Stream str,str2,str3
 
@@ -82,19 +83,21 @@ maps : (Functor f, Monad m)
 maps f s = Build (\r,eff,step => streamFold r eff (step . f) s)
 
 export
-map : Monad m
+||| `map` for stream `v`alues, namespacing isn't enough to keep Idris from
+||| picking Prelude.map still so we need to use our own name.
+mapv : Monad m
     => (a -> b) -> Stream (Of a) m r -> Stream (Of b) m r
-map f s = maps (first f) s
+mapv f s = maps (first f) s
 
 export
-mapsM : (Monad m, Functor f)
+mapped : (Monad m, Functor f)
      => (forall x. f x -> m (g x)) -> Stream f m r -> Stream g m r
-mapsM f s = Build (\r,eff,step => streamFold r eff (eff . map step . f) s)
+mapped f s = Build (\r,eff,step => streamFold r eff (eff . map step . f) s)
 
 export
 mapM : Monad m
     => (a -> m b) -> Stream (Of a) m r -> Stream (Of b) m r
-mapM f s = mapsM (\(c :> g) => (:> g) <$> f c) s
+mapM f s = mapped (\(c :> g) => (:> g) <$> f c) s
 
 export
 -- This is unlikely to be right
@@ -140,8 +143,8 @@ intercalates sep (Step y) = do
       sep
       f' <- y
       steps sep f'
-    steps sep (Build g) = g pure (join . lift) ?dfd
-intercalates sep (Build g) = g pure (join . lift) join
+    steps sep (Build g) = intercalates sep (streamBuild g)
+intercalates sep (Build g) = intercalates sep (streamBuild g)
 
 
 mutual
@@ -162,15 +165,23 @@ mutual
   (Functor f, Monad m) => Monad (Stream f m) where
     x >>= k = Build (\r,eff,step => streamFold (streamFold r eff step . k) eff step x)
 
--- Alternative 
+-- Alternative (Stream f m) where
 
-public export -- public, it's just a constructor
+public export
+(Functor f, Monad m, HasIO m) => HasIO (Stream f m) where
+  liftIO act = Effect (liftIO $ io_bind act (pure . Return))
+
+public export
+Functor f => MonadTrans (Stream f) where
+  lift = Effect . map Return
+
+public export -- public, we're exporting Stream currently anyway
 %inline
 wrap : (Functor f, Monad m) => f (Stream f m a) -> Stream f m a
 -- wrap x = Build (\r,eff,step => step $ map (streamFold r eff step) x)
 wrap = Step
 
-public export -- public, it's just a constructor
+public export -- public, we're exporting Stream currently anyway
 %inline
 effect : (Functor f, Monad m) => m (Stream f m r) -> Stream f m r
 effect = Effect

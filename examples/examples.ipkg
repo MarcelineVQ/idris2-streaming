@@ -1,0 +1,21 @@
+package examples
+
+authors    = "MarcelineVQ"
+version    = "0.0.1.0"
+readme     = "README.md"
+
+homepage   = "https://github.com/MarcelineVQ/idris2-streaming"
+sourceloc  = "https://github.com/MarcelineVQ/idris2-streaming.git"
+bugtracker = "https://github.com/MarcelineVQ/idris2-streaming/issues"
+
+license    = "CC0 (refer to LICENSE file)"
+brief      = "Examples of Effectful Streaming for Idris"
+
+modules = File
+sourcedir = ""
+
+prebuild = "cd .. && idris2 --install streaming.ipkg"
+
+-- main = Streaming
+
+depends = base, contrib, network, bytes, streaming
