@@ -18,4 +18,4 @@ prebuild = "cd .. && idris2 --install streaming.ipkg"
 
 -- main = Streaming
 
-depends = base, contrib, network, bytes, streaming
+depends = base, contrib, network, streaming

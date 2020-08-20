@@ -1,7 +1,5 @@
 module Streaming.Bytes
 
-import Data.Bytes.Strict
-import Data.Word.Word8
 import Streaming
 -- import Streaming.Internal
 
@@ -10,7 +8,7 @@ import System.File
 import Control.Monad.Trans
 
 {-
-This module provides ways of constructing streams of Bytes
+This module provides ways of constructing streams of bytes
 -}
 
 intCast : Int -> Bits8
@@ -60,9 +58,9 @@ byteFromFile handle = Build (\r,eff,step => bef handle r eff step)
         | True => pure (r ())
       pure $ step (intCast (cast c) :> bef file r eff step)
 
-export
-bytesFromFile : HasIO io => File -> Nat -> Stream (Of Bytes) io ()
-bytesFromFile file n = mapped toBytes (chunksOf n (byteFromFile file))
-  where
-    toBytes : Stream (Of Bits8) io x -> io (Of Bytes x)
-    toBytes str = first (pack . map cast) <$> toList str
+-- export
+-- bytesFromFile : HasIO io => File -> Nat -> Stream (Of Bytes) io ()
+-- bytesFromFile file n = mapped toBytes (chunksOf n (byteFromFile file))
+--   where
+--     toBytes : Stream (Of Bits8) io x -> io (Of Bytes x)
+--     toBytes str = first (pack . map cast) <$> toList str

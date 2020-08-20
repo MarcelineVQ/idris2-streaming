@@ -14,7 +14,6 @@ brief      = "Effectful Streaming for Idris"
 modules = Streaming
         , Streaming.API
         , Streaming.Internal
-        , Streaming.Test
         
         , Streaming.Streams
         , Streaming.Bytes
@@ -32,4 +31,4 @@ sourcedir = "src"
 
 main = Streaming
 
-depends = base, contrib, network, bytes
+depends = base, contrib, network
