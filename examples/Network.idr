@@ -84,70 +84,17 @@ withSocket fam ty proto act = do
   traverse close sock
   pure res
 
-export
-gref : MonadManaged m => EitherT Error m ()
-gref = do
+main : IO ()
+main = runManaged $ do
   let filename = "out.txt"
   let addr = Hostname "www.example.com"
   let msg = "GET / HTTP/1.0\r\nHost: www.example.com\r\nUser-Agent: fetch.c\r\n\r\n"
-  file <- MkEitherT . use . managed $ withFile "out.txt" WriteTruncate
-  sock <- MkEitherT . use . managed $ withSocket AF_INET Stream 0
-  0 <- lift $ connect sock addr 80
-    | err => throwE (ConnectError err)
-  lift $ first SendError <$> send sock msg
-  lift $ S.stdoutChrLn' (maps charCast (streamnet sock))
-  pure ()
-
-main : IO ()
-main = do
-  runManaged $ do
-    Right _ <- runEitherT gref
-      | Left err => putStrLn $ showError err
-    pure ()
-  pure ()
-
-  -- Right sock <- socket AF_INET Stream 0
-    -- | Left err => putStrLn . showError . SocketError $ err
-  -- 0 <- connect sock (Hostname "www.example.com") 0
-    -- | err => putStrLn . showError . ConnectError $ err
-  -- let msg = "HEAD / HTTP/1.0\r\nHost: www.example.com\r\nUser-Agent: fetch.c\r\n\r\n"
-  -- streamnet sock
-  --   &$ BS.lines
-  --   |> S.maps (BS.words
-  --           |> S.maps (S.toList |> map (first reverse) |> S.fromList')
-  --           |> BS.unwords)
-  --   |> BS.unlines
-  --   |> map charCast -- Just for example display purposes.
-  --   |> stdoutChrLn
-
-
-
-
---               id
---               <$> runEitherT {l=(NetworkError,Int)} {m=IO} {r=()} $ do
---     let filename = "text.txt"
---     let addr = Hostname "www.example.com"
---     -- let addr = Hostname "www.cplusplus.com"
---     let msg = "HEAD / HTTP/1.0\r\nHost: www.example.com\r\nUser-Agent: fetch.c\r\n\r\n"
---     -- let msg = "GET / HTTP/1.0\r\nHost: www.cplusplus.com\r\nUser-Agent: fetch.c\r\n\r\n"
---     -- sock <- first SocketError <$> (liftIO $ socket AF_INET Stream 0)
---     ?DFfds
-    -- 0 <- connect sock addr 80
-    --   | err => close sock *> putStrLn ("Connecting error: " ++ strerror err)
-    -- Right res <- send sock msg
-    --   | Left err => close sock *> putStrLn ("Send error: " ++ strerror err)
-    -- Right res <- recv sock 1024
-    --   | Left err => close sock *> putStrLn ("Receive error: " ++ strerror err)
-    -- print res
-
-    -- Right _ <- withFile filename Read $ \f => do
-    --     byteFromFile f
-    --       &$ BS.lines
-    --       |> S.maps (BS.words
-    --               |> S.maps (S.toList |> map (first reverse) |> S.fromList')
-    --               |> BS.unwords)
-    --       |> BS.unlines
-    --       |> map charCast -- Just for example display purposes.
-    --       |> stdoutChrLn
-    --   | Left err => printLn $ "File error: " ++ filename ++ ", " ++ show err
-    
+  res <- runEitherT $ do
+    file <- MkEitherT . use . managed $ withFile "out.txt" WriteTruncate
+    sock <- MkEitherT . use . managed $ withSocket AF_INET Stream 0
+    0 <- lift $ connect sock addr 80
+      | err => throwE (ConnectError err)
+    lift $ first SendError <$> send sock msg
+    lift $ S.stdoutChrLn' (maps charCast (streamnet sock))
+    pure () -- helps type inferrence
+  either (putStrLn . showError) pure res
