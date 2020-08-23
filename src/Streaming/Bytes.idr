@@ -11,6 +11,7 @@ import Control.Monad.Trans
 This module provides ways of constructing streams of bytes
 -}
 
+export
 intCast : Int -> Bits8
 intCast r = believe_me r
 

@@ -1,7 +1,7 @@
 package streaming
 
 authors    = "MarcelineVQ"
-version    = "0.1.2.0"
+version    = "0.2.3.0"
 readme     = "README.md"
 
 homepage   = "https://github.com/MarcelineVQ/idris2-streaming"
@@ -21,6 +21,9 @@ modules = Streaming
         , Data.Functor.Of
         , Data.Functor.Compose
         , Data.Functor.Bifunctor
+        
+        , Control.Monad.EitherT
+        , Control.Monad.Managed
         
         , Data.Proxy
         , Data.LazyList

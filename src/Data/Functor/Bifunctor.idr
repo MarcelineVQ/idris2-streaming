@@ -18,3 +18,13 @@ firstM : (Bifunctor p, Functor m) => (a -> m b) -> p a c -> m (p b d)
 -- firstM f x = bimapM ?sdfd ?sdf (first f x)
 
 -- firstM : (a -> m b) -> p a c -> m (p b d)
+
+public export
+Bifunctor Pair where
+  bimap f g (x,y) = (f x, g y)
+  first f (x,y) = (f x, y)
+  second f (x,y) = (x, f y)
+
+public export
+Bifunctor Either where
+  bimap f g x = either (Left . f) (Right . g) x

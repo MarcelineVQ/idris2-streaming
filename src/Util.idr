@@ -65,3 +65,13 @@ withFile file mode act = do Right f <- openFile file mode
                             r <- act f
                             closeFile f
                             pure (Right r)
+
+public export
+Foldable (Either e) where
+  foldr f acc (Left _) = acc
+  foldr f acc (Right x) = f x acc
+
+public export
+Traversable (Either e) where
+  traverse f (Left x)  = pure (Left x)
+  traverse f (Right x) = Right <$> f x

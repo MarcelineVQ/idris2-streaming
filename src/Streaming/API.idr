@@ -10,6 +10,12 @@ import Data.LazyList
 
 import Util
 
+-- This is defined here instead of with the other maps because Internal defines
+-- Functor which can cause ambiguity of use. This name might change over time if
+-- clashes continue to baffle. It's not always obvious Idris chose the wrong map
+-- given an error mesage about it, further sometimes you don't get an error in
+-- the place you expect (or at all) since either this map or Functor map can be
+-- entirely valid(type-wise) to use in the same location.
 export
 %inline
 cons : Monad m => a -> Stream (Of a) m r -> Stream (Of a) m r
@@ -18,7 +24,10 @@ cons x str = wrap (x :> str)
 
 export
 append : Monad m => Stream (Of a) m r -> Stream (Of a) m r -> Stream (Of a) m r
-append s1 s2 = Build (\r,eff,step => streamFold r eff (\(x :> y) => (streamFold r eff step s2)) s1)
+append (Return x) s2 = s2
+append (Effect x) s2 = Effect $ map (`append` s2) x
+append (Step (x :> y)) s2 = ?dfsfsd_3
+append (Build f) s2 = ?dfsfsd_4
 
 -- append : (Monad m) => Stream (Of a) m a -> Stream f m a -> Stream f m a
 -- append s1 s2 = streamFold ?append_rhs ?sdd ?dsfds s1
@@ -103,11 +112,7 @@ each' (x :: xs) = cons x (each' xs)
 export
 ||| It's better to use LazyList. List will reside in memory all at once.
 each'' : Monad m => List a -> Stream (Of a) m ()
-each'' = each . arf
-  where
-    arf : List a -> LazyList a
-    arf [] = []
-    arf (x :: xs) = x :: arf xs
+each'' = each . fromList
 
 export
 ||| You are best to avoid this, foldable's methods are strict, your source will
@@ -175,7 +180,7 @@ split : Monad m => (a -> Bool) -> Stream (Of a) m r -> Stream (Stream (Of a) m) 
 split f (Return y) = Return y
 split f (Effect y) = Effect (map (split f) y)
 split f (Step (a :> rest)) = if not (f a)
-  then Step (map (split f) (yield a *> span (not . f) rest))
+  then Step (Prelude.map (split f) (yield a *> span (not . f) rest))
   else split f rest
 split f (Build g) = split f (streamBuild g)
 
@@ -183,18 +188,20 @@ export
 print : (HasIO io, Show a) => Stream (Of a) io r -> io r
 print x = streamFold pure join (\(x :> s) => print x *> s) x <* putStr "\n"
 
--- main = S.print (S.mapM readIORef (S.mapM newIORef (S.each [1..10^8::Int])))
+
+export
+concat : (Foldable f, Monad m) => Stream (Of (f a)) m r -> Stream (Of a) m r
+concat str = for str each'''
 
 -- Temporary, this seems like a common pattern somehow, I need to find what
--- fundamental operation subsumes it.
+-- fundamental operation subsumes it. a variant of how concat is written perhaps
 export
 fromList : (Foldable f, Monad m) => m (Of (LazyList a) r) -> Stream (Of a) m r
 fromList xs = Effect $ do
   (x :> y) <- xs
   let g = each {m} x
   pure (Build (\r,eff,step => streamFold (\_ => r y) eff step g))
-
-
+  
 export
 fromList' : (Foldable f, Monad m) => m (Of (f a) r) -> Stream (Of a) m r
 fromList' xs = Effect $ do

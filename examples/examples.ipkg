@@ -1,7 +1,7 @@
 package examples
 
 authors    = "MarcelineVQ"
-version    = "0.0.1.0"
+version    = "0.1.2.0"
 readme     = "README.md"
 
 homepage   = "https://github.com/MarcelineVQ/idris2-streaming"
@@ -12,6 +12,7 @@ license    = "CC0 (refer to LICENSE file)"
 brief      = "Examples of Effectful Streaming for Idris"
 
 modules = File
+        , Network
 sourcedir = ""
 
 prebuild = "cd .. && idris2 --install streaming.ipkg"
