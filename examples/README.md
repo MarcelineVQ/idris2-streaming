@@ -1,11 +1,9 @@
 Examples of Effectful Streaming For Idris
 =====
 
-Just one for the moment, but more to come and their development will influence the direction of the [streaming](https://github.com/MarcelineVQ/idris2-streaming) library. Especially in terms of how to work with Bits8/Bytes.
-
 The following examples assume that your first step was to enter the `examples` directory and type `idris2 --build examples.ipkg`
 
-* `File.idr` shows an example of stream processing on a file.  
+* `File.idr` shows an example of stream processing on a file including running decoding.  
   It is most directly ran by typing `idris2 -p streaming File.idr --exec main`  
   Alternatively you can type `idris2 --repl examples.ipkg` and then `:module File` and finally `:exec main`
 

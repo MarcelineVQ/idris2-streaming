@@ -3,7 +3,7 @@ module Control.Monad.Managed
 import Control.Monad.Trans
 import Control.Monad.State
 
-import Control.Monad.EitherT
+import Control.Monad.Either
 
 -------------------------------------------------
 {-

@@ -4,18 +4,12 @@ import Prelude as P
 
 import public Streaming.Internal as S
 
-
+import Control.Monad.Trans -- lift
 
 import Data.LazyList
 
-import Util
+-- import Util
 
--- This is defined here instead of with the other maps because Internal defines
--- Functor which can cause ambiguity of use. This name might change over time if
--- clashes continue to baffle. It's not always obvious Idris chose the wrong map
--- given an error mesage about it, further sometimes you don't get an error in
--- the place you expect (or at all) since either this map or Functor map can be
--- entirely valid(type-wise) to use in the same location.
 export
 %inline
 cons : Monad m => a -> Stream (Of a) m r -> Stream (Of a) m r
@@ -23,33 +17,28 @@ cons x str = wrap (x :> str)
 -- cons x str = Build (\r,eff,step => step (x :> streamFold r eff step str))
 
 export
-append : Monad m => Stream (Of a) m r -> Stream (Of a) m r -> Stream (Of a) m r
-append (Return x) s2 = s2
-append (Effect x) s2 = Effect $ map (`append` s2) x
-append (Step (x :> y)) s2 = ?dfsfsd_3
-append (Build f) s2 = ?dfsfsd_4
+copy : Monad m => Stream (Of a) m r -> Stream (Of a) (Stream (Of a) m) r
+copy str = case str of
+  (Return x) => Effect . pure . Return $ x
+  (Effect x) => Effect . pure . Effect $ copy <$> lift x -- tricky
+  (Step (x :> y)) => Effect . pure . Effect $ (Step (x :> Return (Step (x :> copy y))))
+  (Build g)  => copy (streamBuild g)
 
--- append : (Monad m) => Stream (Of a) m a -> Stream f m a -> Stream f m a
--- append s1 s2 = streamFold ?append_rhs ?sdd ?dsfds s1
+export
+store : Monad m => (Stream (Of a) (Stream (Of a) m) r -> t)
+     -> Stream (Of a) m r -> t
+store f str = f (copy str)
+
+-- Conceptually simple, just run stream1 then run stream2.
+export
+append : Monad m => Stream (Of a) m r -> Stream (Of a) m r -> Stream (Of a) m r
+append s1 s2 = Build
+ (\r,eff,step => streamFold (\_ => streamFold r eff step s2) eff step s1)
 
 export
 concats : (Functor f, Monad m) => Stream (Stream f m) m r -> Stream f m r
-concats str = Build (\r,eff,step => streamFold r eff (streamFold id eff step) str)
-
-reverse : Monad m => Stream (Stream f m) m r -> Stream f m r
-
--- drop n@(S k) str = case str of
-  -- (Return x) => Return ()
-  -- (Effect x) => Effect (map (take n) x)
-  -- (Step x) => Step (map (take k) x)
-  -- (Build g) => g (const (Return ())) (effect . map (take n)) (wrap . map (take k))
-
--- take' : (Functor f, Monad m) => Nat -> Stream f m r -> Stream f m ()
--- take' Z str = Build (\r,eff,step => r ())
--- take' (S n) str = Build (\r,eff,step => streamFold (const (r ()))
---   (\z => streamFold r eff ?sdeff (take' n str))
---   ?Sdf
---   str)
+concats str = Build
+  (\r,eff,step => streamFold r eff (streamFold id eff step) str)
 
 export
 fold : Monad m => (a -> b -> b) -> b -> Stream (Of a) m r -> m (Of b r)
@@ -63,6 +52,10 @@ fold_ f acc = streamFold (\_ => pure acc) join (\(a :> rest) => f a <$> rest)
 export
 toList : Monad m => Stream (Of a) m r -> m (Of (List a) r)
 toList = fold (::) []
+
+export
+toList_ : Monad m => Stream (Of a) m r -> m (List a)
+toList_ = fold_ (::) []
 
 export
 length : Monad m => Stream (Of a) m r -> m (Of Int r)
@@ -137,12 +130,24 @@ splitsAt n str = case str of
     (S k) => Step $ splitsAt k <$> x
   (Build g) => splitsAt n (streamBuild g) -- :(
 
+-- idk how to 'Build' this. specifically to carry the Nat to the next 'step'
+export
+splitsAt' : (Monad m, Functor f) => Int -> Stream f m r -> Stream f m (Stream f m r) 
+splitsAt' 0 str = Return str
+splitsAt' n str = case str of
+  (Return x) => Return (Return x)
+  (Effect x) => Effect (splitsAt' n <$> x)
+  (Step x) => case n of
+    0 => Return (Step x)
+    k => Step $ splitsAt' (k-1) <$> x
+  (Build g) => splitsAt' n (streamBuild g) -- :(
+
 -- idk how to 'Build' this
 export
 chunksOf : (Monad m, Functor f) => Nat -> Stream f m r -> Stream (Stream f m) m r
 chunksOf n (Return x) = Return x
 chunksOf n (Effect x) = Effect (chunksOf n <$> x)
-chunksOf n (Step x)   = Step (Step (map (map (chunksOf n) . splitsAt (n`monus`1)) x))
+chunksOf n (Step x)   = Step (Step (map (map (chunksOf n) . splitsAt (n`minus`1)) x))
 chunksOf n (Build g)  = chunksOf n (streamBuild g) -- :(
 
 -- I was able to 'Build' this because it doesn't need to carry state per
@@ -169,6 +174,15 @@ take n@(S k) str = case str of
   (Build g) => g (const (Return ())) (effect . map (take n)) (wrap . map (take k))
 
 export
+take' : (Functor f, Monad m) => Int -> Stream f m r -> Stream f m ()
+take' 0 str = pure ()
+take' n str = case str of
+  (Return x) => Return ()
+  (Effect x) => Effect (map (take' n) x)
+  (Step x) => Step (map (take' (n - 1)) x)
+  (Build g) => g (const (Return ())) (effect . map (take' n)) (wrap . map (take' (n - 1)))
+
+export
 drop : (Functor f, Monad m) => Nat -> Stream f m r -> Stream f m r
 drop Z str = str
 drop (S k) str = Build (\r,eff,step => streamFold r eff step (drop k str))
@@ -185,8 +199,16 @@ split f (Step (a :> rest)) = if not (f a)
 split f (Build g) = split f (streamBuild g)
 
 export
-print : (HasIO io, Show a) => Stream (Of a) io r -> io r
-print x = streamFold pure join (\(x :> s) => print x *> s) x <* putStr "\n"
+filter : Monad m => (a -> Bool) -> Stream (Of a) m r -> Stream (Of a) m r
+filter p str = Build (\r,eff,step => streamFold r eff (\(x :> y) => if p x then step (x :> y) else y) str)
+
+export
+all : Monad m => (a -> Bool) -> Stream (Of a) m r -> m (Of Bool r)
+all p str = fold (\x,b => p x && b) True str
+
+export
+print : (HasIO io, Show a, Show r) => Stream (Of a) io r -> io r
+print x = streamFold (\r => printLn r *> pure r) join (\(x :> s) => print x *> s) x <* putStr "\n"
 
 
 export
@@ -208,3 +230,31 @@ fromList' xs = Effect $ do
   (x :> y) <- xs
   let g = each''' {m} x
   pure (Build (\r,eff,step => streamFold (\_ => r y) eff step g))
+
+export
+zipWith : Monad m => (a -> b -> c) -> Stream (Of a) m r -> Stream (Of b) m r -> Stream (Of c) m r
+zipWith f (Return r) str2 = Return r
+zipWith f (Effect m) str2 = Effect $ map (\str => zipWith f str str2) m
+zipWith f s@(Step (a :> y1)) str2 = case str2 of
+  (Return r) => Return r
+  (Effect m) => Effect $ map (zipWith f s) m
+  (Step (b :> y2)) => Step $ f a b :> zipWith f y1 y2
+  (Build g) => g Return Effect (\(b :> y2) => Step $ f a b :> y2)
+zipWith f (Build g) str2 = zipWith f (streamBuild g) str2
+
+
+export
+%inline
+zip : Monad m => Stream (Of a) m r -> Stream (Of b) m r -> Stream (Of (a,b)) m r
+zip = zipWith MkPair
+
+export
+iterate : Monad m => (a -> a) -> a -> Stream (Of a) m r
+iterate f x = effect $ pure $ wrap $ x :> iterate f (f x)
+
+-- export
+-- reverse : Monad m => Stream (Of a) m r -> Stream (Of a) m r
+-- reverse (Return x) = Return x
+-- reverse (Effect x) = ?reverse_rhs_2
+-- reverse (Step (x :> y)) = reverse y `append` (x `cons` empty)
+-- reverse (Build f) = ?reverse_rhs_4

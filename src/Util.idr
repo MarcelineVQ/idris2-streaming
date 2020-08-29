@@ -1,5 +1,8 @@
 module Util
 
+-- NB things will need to be removed from here as Idris gains them in the
+-- Prelude.
+
 import System.File
 
 infixl 1 <&>
@@ -7,22 +10,13 @@ export
 (<&>) : Functor f => f a -> (a -> b) -> f b
 x <&> f = f <$> x
 
-infixl 4 <$,$>
-
-export
-(<$) : Functor f => a -> f b -> f a
-x <$ y = map (const x) y
-
-export
-($>) : Functor f => f a -> b -> f b
-($>) = flip (<$)
-
 infixr 1 =<<
 export
 (=<<) : Monad m => (a -> m b) -> m a -> m b
 (=<<) = flip (>>=)
 
--- For when Lazy is causing type problems
+-- For when Lazy is causing type problems and you want to avoid Force/Delay, or
+-- force/delay isn't working as I've noticed it sometimes doesn't.
 infixr 4 &&|
 export
 (&&|) : Bool -> Bool -> Bool
@@ -66,12 +60,43 @@ withFile file mode act = do Right f <- openFile file mode
                             closeFile f
                             pure (Right r)
 
-public export
-Foldable (Either e) where
-  foldr f acc (Left _) = acc
-  foldr f acc (Right x) = f x acc
+export
+on : (b -> b -> c) -> (a -> b) -> a -> a -> c
+on f g x y = g x `f` g y
 
-public export
-Traversable (Either e) where
-  traverse f (Left x)  = pure (Left x)
-  traverse f (Right x) = Right <$> f x
+infixl 9 ^
+export
+%foreign "scheme:expt"
+(^) : Int -> Int -> Int
+
+infixl 7 .&.
+export
+%foreign "scheme:bitwise-and"
+(.&.) : Int -> Int -> Int
+
+infixl 8 .|.
+export
+%foreign "scheme:bitwise-ior"
+(.|.) : Int -> Int -> Int
+
+%foreign "scheme:bitwise-xor"
+export
+xor : Int -> Int -> Int
+
+%foreign "scheme:bitwise-not"
+export
+not : Int -> Int
+
+export
+leadingBits : Bits8 -> Int
+leadingBits b0 = count (cast b0) 7
+  where
+    count : Int -> Int -> Int
+    count b p = if p >= 0 && b .&. shiftL 1 p > 0
+                  then 1 + count b (p - 1)
+                  else 0
+
+-- Bits8 is always a valid codepoint
+export
+bits8ToChar : Bits8 -> Char
+bits8ToChar = cast . cast {to=Int}

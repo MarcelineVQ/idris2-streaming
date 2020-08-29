@@ -1,6 +1,6 @@
 module Data.Functor.Of
 
-import Data.Functor.Bifunctor
+import Data.Bifunctor
 
 -- Of exists to allow stream functions to be polymorphic over the choice of
 -- stream value. This lets us reuse code for nested streams.
@@ -15,14 +15,14 @@ data Of : Type -> Type -> Type where
   (:>) : a -> Lazy r -> Of a r
 
 public export
-Functor (Of a) where
-  map f (x :> y) = x :> f y
-
-public export
 Bifunctor Of where
   bimap f g (x :> y) = (f x :> g y)
   first f (x :> y) = (f x :> y)
   second g (x :> y) = (x :> g y)
+
+public export
+Functor (Of a) where
+  map f o = second f o
 
 public export
 (Semigroup a, Semigroup r) => Semigroup (Of a r) where
@@ -34,7 +34,7 @@ public export
 
 public export
 (Show a, Show r) => Show (Of a r) where
-  show (x :> y) = show x ++ " :> " ++ show y
+  showPrec d (x :> y) = showParens (d >= Backtick) "(" ++ show x ++ " :> " ++ show y ++ ")"
 
 %inline
 export

@@ -3,10 +3,13 @@ module File
 -- Example of streaming from/to files.
 
 import Streaming
-import Streaming.Bytes as BS
+import Streaming.Bytes as B
+import Streaming.Char as C
+import Streaming.Encoding.UTF8
 import Util -- withFile
 
 import System.File
+import Data.Strings
 
 import Data.List as L -- reverse
 
@@ -26,7 +29,6 @@ x &$ f = f x
    stream takes. One could as easily use . and $ and write this in regular
    'reverse' style Idris/Haskell composition.
 -}
---
 -------------------------------------------------
 
 export
@@ -37,13 +39,20 @@ main = do
       | Left err => printLn $ "File error: " ++ filename ++ ", " ++ show err
     putStrLn res
     Right _ <- withFile filename Read $ \f => do
-        byteFromFile f
-          &$ BS.lines
-          |> S.mapf (BS.words
+        B.byteFromFile f {io=IO}
+          &$ decodeUtf8
+          |> encodeUtf8 -- encoding test, temporary
+          |> decodeUtf8 -- encoding test, temporary
+          |> C.lines
+          |> S.mapf (C.words
                   |> S.mapf (S.toList |> map (first reverse) |> S.fromList')
-                  |> BS.unwords)
-          |> BS.unlines
-          |> maps charCast -- Just for example display purposes.
-          |> stdoutChrLn
+                  |> C.unwords)
+          |> C.unlines
+          -- We collect the Chars into a String here instead of just piping them
+          -- to stdout because idris backend has some issues right now with a
+          -- mismatch between a code point Char and 'c char'. Strings don't
+          -- exhibit this issue.
+          -- |> map (either show show)
+          |> S.fold strCons "" >>= putStrLn . fstOf
       | Left err => printLn $ "File error: " ++ filename ++ ", " ++ show err
     pure ()

@@ -1,4 +1,4 @@
-module Data.Functor.Bifunctor
+module Data.Bifunctor
 
 public export
 interface Bifunctor (p : Type -> Type -> Type) where

@@ -8,12 +8,11 @@ import Network.Socket
 
 import Control.Monad.Trans
 
-import Control.Monad.EitherT
+import Control.Monad.Either
 import Control.Monad.Managed
 
 import Data.LazyList as LL
 import Util -- Either instances
-
 
 -------------------------------------------------
 -- Streaming Network Example
@@ -23,14 +22,14 @@ import Util -- Either instances
 --
 -- NB This example has not been tested to make sure it's running in constant
 -- space.
---
 {- Let's read the text from example.com! We're going to do some parsing here to
    find the text we're after but in real life you'd use a proper parsing lib.
    That could be a good next project, streaming to a parsing lib.
    This example is a little more involved to make use of some extra tooling to
    be expanded on later.
+   In a real program you'd want to enforce that connecting has been done before
+   sending or receiving, consider Control.Linear.Network for your own tests.
 -}
---
 -------------------------------------------------
 
 infixl 9 |> -- flip .
@@ -45,6 +44,7 @@ x &$ f = f x
 strerror : Int -> String
 -- No reason to PrimIO, right? It's just a lookup.
 
+||| A sum Error type for this example, for making EitherT use direct.
 data Error = SocketError Int
            | ConnectError Int
            | SendError Int
@@ -58,6 +58,8 @@ showError (SendError err) = "Send error: " ++ strerror err
 showError (RecvError err) = "Recv error: " ++ strerror err
 showError (FileError err) = "File error: " ++ show err
 
+-- While this is really Maybe Error, writing it as Either Error () plays nicer
+-- with the EitherT setup used here.
 streamnet : (Monad m, HasIO m) => Socket -> Stream (Of Bits8) m (Either Error ())
 streamnet sock = Effect $ do
   let chunkLen = 1024
@@ -70,14 +72,16 @@ streamnet sock = Effect $ do
               then Return (Right ())
               else streamnet sock
 
-withFile : HasIO io => String -> Mode -> (Either Error File -> io b) -> io b
+withFile : HasIO io => String -> Mode
+        -> (Either Error File -> io b) -> io b
 withFile file mode act = do
   f <- first FileError <$> openFile file mode
   res <- act f
   traverse closeFile f
   pure res
 
-withSocket : HasIO io => SocketFamily -> SocketType -> ProtocolNumber -> (Either Error Socket -> io b) -> io b
+withSocket : HasIO io => SocketFamily -> SocketType -> ProtocolNumber
+          -> (Either Error Socket -> io b) -> io b
 withSocket fam ty proto act = do
   sock <- first SocketError <$> socket fam ty proto
   res <- act sock
@@ -86,15 +90,20 @@ withSocket fam ty proto act = do
 
 main : IO ()
 main = runManaged $ do
-  let filename = "out.txt"
-  let addr = Hostname "www.example.com"
-  let msg = "GET / HTTP/1.0\r\nHost: www.example.com\r\nUser-Agent: fetch.c\r\n\r\n"
-  res <- runEitherT $ do
-    file <- MkEitherT . use . managed $ withFile "out.txt" WriteTruncate
-    sock <- MkEitherT . use . managed $ withSocket AF_INET Stream 0
-    0 <- lift $ connect sock addr 80
-      | err => throwE (ConnectError err)
-    lift $ first SendError <$> send sock msg
-    lift $ S.stdoutChrLn' (maps charCast (streamnet sock))
-    pure () -- helps type inferrence
-  either (putStrLn . showError) pure res
+    let filename = "out.txt"
+        addr = Hostname "www.example.com"
+        msg = makeHeader ["GET / HTTP/1.0"
+                         ,"Host: www.example.com"
+                         ,"User-Agent: idris2-test"]
+    res <- runEitherT $ do
+      file <- MkEitherT . use . managed $ withFile "out.txt" WriteTruncate
+      sock <- MkEitherT . use . managed $ withSocket AF_INET Stream 0
+      0 <- lift $ connect sock addr 80
+        | err => throwE (ConnectError err)
+      lift $ first SendError <$> send sock msg
+      lift $ S.stdoutChrLn' (maps charCast (streamnet sock))
+      pure () -- helps type inferrence
+    either (putStrLn . showError) pure res
+  where
+    makeHeader : List String -> String
+    makeHeader xs = concatMap (++ "\r\n") xs ++ "\r\n"

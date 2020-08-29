@@ -1,7 +1,7 @@
 module Streaming.Streams
 
-import Streaming.Internal
-import Streaming.API
+import Streaming.Internal as S
+import Streaming.API as S
 
 import Data.Functor.Of
 
@@ -9,11 +9,44 @@ import System.File
 
 import Data.Strings
 
+import Util
 
+export
+data DecodeError = CodepointOutOfRange
+                 | InvalidStartByte Bits8
+                 | CodepointEndedEarly 
+
+export
+Show DecodeError where
+  show CodepointOutOfRange = "CodepointOutOfRange"
+  show (InvalidStartByte x) = "InvalidStartByte " ++ show x
+  show CodepointEndedEarly = "CodepointEndedEarly"
+
+export
+data EncodeError = EncCodepointOutOfRange
+-- data EncodeError = CodepointOutOfRange
+--                  | InvalidStartByte Bits8
+--                  | CodepointEndedEarly 
+-- 
+-- export
+export
+Show EncodeError where
+  show EncCodepointOutOfRange = "CodepointOutOfRange"
+--   show (InvalidStartByte x) = "InvalidStartByte " ++ show x
+--   show CodepointEndedEarly = "CodepointEndedEarly"
+
+infixl 9 |> -- flip .
+(|>) : (a -> b) -> (b -> c) -> a -> c
+f |> g = \x => g (f x)
+
+infixl 1 &$ -- flip $
+(&$) : a -> (a -> b) -> b
+x &$ f = f x
 
 {-
 The intent of this module is to provide common stream sources, it's not very
-thought-through at the moment.
+thought-through at the moment and is mostly used as a testbed for things that
+move elsewhere.
 -}
 
 export
