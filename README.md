@@ -3,9 +3,9 @@ Effectful Streaming For Idris
 
 This package provides a central idea and tool for effectful streaming. Heavily based on the [Haskell library](https://hackage.haskell.org/package/streaming) of the same idea.
 
-This isn't a Total streaming library and doesn't make use of more advanced idris features. Totality would be great but unlikely since it imposes restrictions of the Functor's/Monad's we're able to make use of.
+This isn't a Total streaming library and doesn't make use of more advanced idris features. Totality would be great but unlikely since it could impose restrictions of the Functors/Monads we're able to make use of. That's a reasonable area of experimentation.
 
-On top of general streaming, this package's intent is to provide a basis to stream bytes from sources like files or network. To that end there is a Streaming.Bytes module providing some work in the direction. Future work is likely to come in the form of another package that depends on this one and implements streams for [bytes](https://github.com/MarcelineVQ/idris2-bytes)  
+On top of general streaming, this package's intent is to provide a basis to stream bytes from sources like files or network. To that end there is a Streaming.Bytes module providing some basics. Future work is likely to come in the form of another package that depends on this one and implements streams for [bytes](https://github.com/MarcelineVQ/idris2-bytes)  
 
 Examples are available as a package in the `examples` directory.
 

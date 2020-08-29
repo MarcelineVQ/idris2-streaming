@@ -10,6 +10,16 @@ import Data.LazyList
 
 -- import Util
 
+infixl 9 |> -- flip .
+export
+(|>) : (a -> b) -> (b -> c) -> a -> c
+f |> g = \x => g (f x)
+
+infixl 1 &$ -- flip $
+export
+(&$) : a -> (a -> b) -> b
+x &$ f = f x
+
 export
 %inline
 cons : Monad m => a -> Stream (Of a) m r -> Stream (Of a) m r

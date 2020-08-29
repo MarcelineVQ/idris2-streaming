@@ -13,14 +13,6 @@ import Data.Strings
 
 import Data.List as L -- reverse
 
-infixl 9 |> -- flip .
-(|>) : (a -> b) -> (b -> c) -> a -> c
-f |> g = \x => g (f x)
-
-infixl 1 &$ -- flip $
-(&$) : a -> (a -> b) -> b
-x &$ f = f x
-
 -------------------------------------------------
 -- Streaming File Read Example
 {- Here we read a file, split on newlines, split on words, reverse each word,

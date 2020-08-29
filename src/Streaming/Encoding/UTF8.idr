@@ -29,22 +29,13 @@ export
 Show EncodeError where
   show EncCodepointOutOfRange = "CodepointOutOfRange"
 
-infixl 9 |> -- flip .
-(|>) : (a -> b) -> (b -> c) -> a -> c
-f |> g = \x => g (f x)
-
-infixl 1 &$ -- flip $
-(&$) : a -> (a -> b) -> b
-x &$ f = f x
-
 -- check leading bit, use that to 'split off' the number of extra Bits8 needed.
 -- Check the split stream to make sure those all have follower bits and .|. them
 -- together into a larger type (int) after adjusting their position. If they
 -- don't all match then error out, if they do call it a Char.
--- store, conceptually, acting on a copy of the substream we're splitting off
+-- store, conceptually, acts on a copy of the substream we're splitting off
 -- so we can check validity and roll up the bits at the same time.
-
--- messy messy, but working
+-- messy messy coding, but working, I really need to learn bits better
 export
 decodeUtf8 : Monad m => Stream (Of Bits8) m r
           -> Stream (Of Char) m (Either DecodeError r)
@@ -77,37 +68,58 @@ decodeUtf8 str0 = effect $ do
     collect : Int -> (Int, Int) -> (Int, Int)
     collect x (n,acc) = (n+1, acc .|. shiftL (maskFollower x) (6*n))
 
+private
+%inline
+if' : Bool -> a -> a -> a
+if' x y z = if x then y else z
+
 -- determine our codepoint, split into requisite pieces, cast, mask, stream
--- phew, how do I clean this up?
+-- phew, how do I clean this up a bit?
 private
 encode : Monad m => Char -> Stream (Of Bits8) m (Either EncodeError ())
 encode c = let ic = ord c
-           in     if ic <= 0x00007F then map Right $ enc 1 1 ic
-             else if ic <= 0x0007FF then map Right $ enc 2 3 ic
-             else if ic <= 0x00FFFF then map Right $ enc 3 4 ic
-             else if ic <= 0x10FFFF then map Right $ enc 4 5 ic
-               else pure (Left EncCodepointOutOfRange)
+           in  if' (ic <= 0x00007F) (map Right (enc 1 ic))
+             $ if' (ic <= 0x0007FF) (map Right (enc 2 ic))
+             $ if' (ic <= 0x00FFFF) (map Right (enc 3 ic))
+             $ if' (ic <= 0x10FFFF) (map Right (enc 4 ic))
+             $ pure (Left EncCodepointOutOfRange)
   where
+    -- separate our codepoint into a stream of Bits8 then mask it off
+    -- e.g. 32767 is 13 1-bits or 111111111111111
+    -- our splitting here shifts the number 6 bits each iteration
+    -- step1: 111111111111111   And masked: 10111111
+    -- step2: 000000111111111               10111111
+    -- step3: 000000000000111               10000111
     shiftedBytes : Int -> Stream (Of Bits8) m r
     shiftedBytes x
       = maps (\b => cast (0x80 .|. (b .&. 0x3F))) (iterate (`shiftR`6) x)
 
-    -- O(n) space, we only ever take max 3 though.
+    -- O(min(3,n)) space
     -- Not quite sure about its execution complexity with the naive rev style
-    rev : Stream (Of Bits8) m () -> Stream (Of Bits8) m ()
+    -- Reversing the stream seemed easier than counting down for shifting.
+    rev : Stream (Of Bits8) m r -> Stream (Of Bits8) m r
     rev str0 = effect $ do
       Right (x :> str) <- inspect str0
         | Left l => pure . pure $ l
-      pure $ rev str `append` yield x
+      pure $ rev str <* yield x
 
-    encstart : (n : Int) -> (off : Int) -> (ic : Int) -> Bits8
-    encstart 1 off ic = cast ic
-    encstart n off ic =
-      cast $ shiftL 0xFE (8 - off) -- starting bit mask
-         .|. (shiftR 0xFF off .&. shiftR ic (8 * n)) -- mask and fill bits
+    -- Set up the starting byte that encodes what bytes follow:
+    -- The count of leading 1's, terminated by a 0, says how many parts a
+    -- codepoint has, e.g. codepoint 128512 is a 4 byte codepoint, it happens
+    -- to start with the exact byte 11110000. Conceptually separated as
+    -- 1111|0|000, 4 1's to show the count of bytes that make the codepoint,
+    -- a terminator bit 0, and the first 3 bits of the codepoint.
+    -- I suspect these teminator bits aren't really neccesary and are perhaps
+    -- for utf16's use.
+    encstart : (n : Int) -> (ic : Int) -> Bits8
+    encstart 1 ic = cast ic
+    encstart n ic =
+      cast $ shiftL 0xFE (8 - (n+1)) -- starting bit mask
+         .|. (shiftR 0xFF (n+1) .&. shiftR ic (8 * n)) -- mask and fill bits
 
-    enc : (n : Int) -> (off : Int) -> (ic : Int) -> Stream (Of Bits8) m ()
-    enc n off ic = encstart n off ic
+    -- Combine our starting byte and the shifted follower bytes.
+    enc : (n : Int) -> (ic : Int) -> Stream (Of Bits8) m ()
+    enc n ic = encstart n ic
                      `cons` rev (take' {r=()} (n - 1) (shiftedBytes ic))
 
 export

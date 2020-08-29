@@ -36,14 +36,6 @@ import Util -- Either instances
 -}
 -------------------------------------------------
 
-infixl 9 |> -- flip .
-(|>) : (a -> b) -> (b -> c) -> a -> c
-f |> g = \x => g (f x)
-
-infixl 1 &$ -- flip $
-(&$) : a -> (a -> b) -> b
-x &$ f = f x
-
 %foreign "C:strerror,libc,string.h"
 strerror : Int -> String
 -- No reason to PrimIO, right? It's just a lookup.
