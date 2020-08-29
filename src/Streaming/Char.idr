@@ -3,12 +3,10 @@ module Streaming.Char
 import Streaming
 -- import Streaming.Internal
 
-import System.File
-
 import Control.Monad.Trans
 
-{-
-This module provides ways of constructing streams of bytes
+{- This module eventually provides ways of constructing streams of Char and some
+   basic manipulations of them.
 -}
 
 export

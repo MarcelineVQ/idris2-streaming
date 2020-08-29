@@ -28,6 +28,10 @@ x &$ f = f x
    This is written in a 'forward' style to follow along with the steps the
    stream takes. One could as easily use . and $ and write this in regular
    'reverse' style Idris/Haskell composition.
+
+   I expect file primitives to eventually provide Bits8 rather than Char as they
+   do now, in the mean time we cast to Bits8. This is currently correct to do as
+   these are really a 'c char' which is 8 bits.
 -}
 -------------------------------------------------
 

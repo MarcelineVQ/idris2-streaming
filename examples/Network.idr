@@ -29,6 +29,10 @@ import Util -- Either instances
    be expanded on later.
    In a real program you'd want to enforce that connecting has been done before
    sending or receiving, consider Control.Linear.Network for your own tests.
+
+   I expect network primitives to eventually provide Bits8 rather than Char as
+   they do now, in the mean time we cast to Bits8. This is currently correct to
+   do as these are really a 'c char' which is 8 bits.
 -}
 -------------------------------------------------
 
@@ -67,7 +71,7 @@ streamnet sock = Effect $ do
     | Left err => pure $ Return (Left (RecvError err))
   pure $ if len == 0
     then Return (Right ())
-    else each (map (intCast . cast) . LL.unpack $ res) *>
+    else each (map (cast . cast {to=Int}) . LL.unpack $ res) *>
            if len < chunkLen
               then Return (Right ())
               else streamnet sock

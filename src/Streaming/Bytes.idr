@@ -5,15 +5,11 @@ import Streaming
 
 import System.File
 
-import Control.Monad.Trans
+import Control.Monad.Trans -- intercalates needs it
 
-{-
-This module provides ways of constructing streams of bytes
+{- This module provides ways of constructing streams of bytes (Bits8) and some
+   basic manipulations of them.
 -}
-
-export
-intCast : Int -> Bits8
-intCast r = believe_me r
 
 export
 lines : Monad m => Stream (Of Bits8) m a -> Stream (Stream (Of Bits8) m) m a
@@ -33,16 +29,7 @@ unwords = intercalates (yield 32)
 
 export
 charCast : Bits8 -> Char
-charCast r = cast {from=Int} (believe_me r)
-
--- ByteStream : (Type -> Type) -> Type -> Type
--- ByteStream m a = Stream (Of Bits8) m a
-
--- takeuntill \n or \r, if \r peek for \n next?
--- lines str = Build (\r,eff,step => ?sdffsd)
-
--- lines str = Build (\r,eff,step => ?sdfsfd)
-
+charCast r = cast (cast {to=Int} r)
 
 export
 ||| A stream of Bits8 as read from a File from its current position, e.g. fgetc
@@ -57,11 +44,4 @@ byteFromFile handle = Build (\r,eff,step => bef handle r eff step)
       -- We check here since fEOF doesn't seem to be set by next Step.
       False <- fEOF file
         | True => pure (r ())
-      pure $ step (intCast (cast c) :> bef file r eff step)
-
--- export
--- bytesFromFile : HasIO io => File -> Nat -> Stream (Of Bytes) io ()
--- bytesFromFile file n = mapped toBytes (chunksOf n (byteFromFile file))
---   where
---     toBytes : Stream (Of Bits8) io x -> io (Of Bytes x)
---     toBytes str = first (pack . map cast) <$> toList str
+      pure $ step (cast (cast {to=Int} c) :> bef file r eff step)
