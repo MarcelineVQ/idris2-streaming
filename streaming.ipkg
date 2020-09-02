@@ -1,7 +1,7 @@
 package streaming
 
 authors    = "MarcelineVQ"
-version    = "0.4.3.1"
+version    = "0.5.3.1"
 readme     = "README.md"
 
 homepage   = "https://github.com/MarcelineVQ/idris2-streaming"
@@ -10,27 +10,29 @@ bugtracker = "https://github.com/MarcelineVQ/idris2-streaming/issues"
 
 license    = "CC0 (refer to LICENSE file)"
 brief      = "Effectful Streaming for Idris"
-
-modules = Streaming
-        , Streaming.API
-        , Streaming.Internal
-        
+modules =
+       -- Public
+          Streaming
         , Streaming.Streams
         , Streaming.Bytes
         , Streaming.Char
         , Streaming.Encoding.UTF8
         , Streaming.Encoding.Base64
-        
+
         , Data.Functor.Of
         , Data.Functor.Compose
         , Data.Bifunctor
-        
+
         , Control.Monad.Managed
         , Control.Monad.Codensity
-        
+
         , Data.Proxy
         , Data.LazyList
-        
+
+       -- Internal
+        , Streaming.API
+        , Streaming.Internal
+
         , Util -- Don't expect this one to always exist.
 
 sourcedir = "src"

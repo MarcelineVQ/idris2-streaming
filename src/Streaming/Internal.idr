@@ -113,6 +113,18 @@ unfold step s = Effect $ do
 baf : (Functor f, Monad m) => Stream f m r -> Stream f m r
 baf = unfold inspect
 
+infixr 2 |> -- flip .
+export
+||| reversed . for forward combination of stream operations
+(|>) : (a -> b) -> (b -> c) -> a -> c
+f |> g = \x => g (f x)
+
+infixl 1 &$ -- flip $
+export
+||| reversed $ for forward combination of stream operations
+(&$) : a -> (a -> b) -> b
+x &$ f = f x
+
 -------------------------------------------------
 -- Maps
 -- Mind that these don't share the same naming scheme as Haskell's 'streaming'

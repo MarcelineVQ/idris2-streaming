@@ -10,16 +10,6 @@ import Data.LazyList
 
 -- import Util
 
-infixl 9 |> -- flip .
-export
-(|>) : (a -> b) -> (b -> c) -> a -> c
-f |> g = \x => g (f x)
-
-infixl 1 &$ -- flip $
-export
-(&$) : a -> (a -> b) -> b
-x &$ f = f x
-
 -- slightly more specific version of inspect
 export
 %inline

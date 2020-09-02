@@ -35,14 +35,6 @@ Show EncodeError where
 --   show (InvalidStartByte x) = "InvalidStartByte " ++ show x
 --   show CodepointEndedEarly = "CodepointEndedEarly"
 
-infixl 9 |> -- flip .
-(|>) : (a -> b) -> (b -> c) -> a -> c
-f |> g = \x => g (f x)
-
-infixl 1 &$ -- flip $
-(&$) : a -> (a -> b) -> b
-x &$ f = f x
-
 {-
 The intent of this module is to provide common stream sources, it's not very
 thought-through at the moment and is mostly used as a testbed for things that

@@ -1,7 +1,5 @@
 module Data.LazyList
 
--- Foldable, Functor, etc are all too strict for some reason so this can't implement them for use.
-
 public export
 data LazyList : Type -> Type where
   Nil : LazyList a
@@ -64,16 +62,16 @@ tail'' [] = idris_crash "tail: LazyList was empty"
 tail'' (_ :: xs) = xs
 
 export
-Foldable LazyList where
+implementation  Foldable LazyList where
   foldr f z [] = z
   foldr f z (x :: xs) = f x (foldr f z xs)
 
 
 export
 ||| Foldable's methods are strict due to needing (a -> b -> b). `map` and the
-||| like can stay lazy because they have a constructor guarding their recursion.
-||| We don't have that here and must instead be explicitly lazy in our combining
-||| function.
+||| like can stay lazy probably because they have a constructors guarding their
+||| recursion. We don't have that here and must instead be explicitly lazy in
+||| our combining function.
 foldr' : (a -> Lazy b -> Lazy b) -> b -> LazyList a -> b
 foldr' f z [] = z
 foldr' f z (x :: xs) = f x (Delay (foldr' f z xs))

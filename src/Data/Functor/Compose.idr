@@ -9,6 +9,6 @@ getCompose : Compose f g a -> f (g a)
 getCompose (MkCompose x) = x
 
 public export
-(Functor f, Functor g) => Functor (Compose f g) where
+implementation (Functor f, Functor g) => Functor (Compose f g) where
   map f (MkCompose x) = MkCompose $ map (map f) x
 

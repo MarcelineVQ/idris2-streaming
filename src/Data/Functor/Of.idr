@@ -14,14 +14,15 @@ data Of : Type -> Type -> Type where
   ||| Streaming depends on the Lazyness of r currently
   (:>) : a -> Lazy r -> Of a r
 
--- Eq
--- Ord
-
 public export
-Bifunctor Of where
+implementation Bifunctor Of where
   bimap f g (x :> y) = (f x :> g y)
   first f (x :> y) = (f x :> y)
   second g (x :> y) = (x :> g y)
+
+-- public export
+-- Eq (Of a r) where
+-- Ord
 
 public export
 Functor (Of a) where
@@ -34,15 +35,15 @@ Functor (Of a) where
 
 
 public export
-(Semigroup a, Semigroup r) => Semigroup (Of a r) where
+implementation  (Semigroup a, Semigroup r) => Semigroup (Of a r) where
   (a :> c) <+> (b :> d) = (a <+> b) :> (c <+> d)
 
 public export
-(Monoid a, Monoid r) => Monoid (Of a r) where
+implementation  (Monoid a, Monoid r) => Monoid (Of a r) where
   neutral = neutral :> neutral
 
 public export
-(Show a, Show r) => Show (Of a r) where
+implementation  (Show a, Show r) => Show (Of a r) where
   showPrec d (x :> y) = showParens (d >= Backtick) (show x ++ " :> " ++ show y)
 
 %inline

@@ -44,7 +44,6 @@ decodeUtf8 str0 = effect $ do
                |> store ( maps cast -- Move to Int
                        |> cons (maskMarker x' b) -- add lead bit to stream front
                        |> S.foldl collect 0) -- combine stream's bits
-                       -- |> map (first snd)) -- extract final Int
                |> S.all ((1 ==) . leadingBits) -- requisit bits matched?
                |> \res => do
                     True :> n :> s <- res

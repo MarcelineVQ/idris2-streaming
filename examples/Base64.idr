@@ -77,9 +77,6 @@ fromString' str = each''' (unpack str)
 toString' : Monad m => Stream (Of Char) m r -> m String
 toString' = S.foldr_ strCons ""
 
-gef : IO ()
-gef = S.run ?dsfsfd
-
 -- String is expected to be comprised of Chars from the standardAlphabet for this test
 roundtrip : String -> String
 roundtrip s = fromString' s
@@ -87,16 +84,16 @@ roundtrip s = fromString' s
            |> encodeBase64 standardAlphabet
            |> decodeBase64 standardAlphabet
            |> maps (chr . cast)
-           |> (runIdentity . toString')
+           |> runIdentity . toString'
 
--- encoder for our specific rfc reference strings
+-- encode and check against our specific rfc reference strings
 enc : String -> String -> Bool
 enc s1 s2 = fromString' s1
-         &$ maps (cast . ord)
+         &$ maps (cast . ord) -- turn to Bits8
          |> encodeBase64 standardAlphabet
-         |> maps (chr . cast)
+         |> maps (chr . cast) -- back to Char
          |> toString'
-         |> ((== s2) . runIdentity)
+         |> (== s2) . runIdentity
 
 -- using Managed for fun, it's not really that useful for just one 'withFoo'
 randoStr : Stream (Of Bits8) Managed (Either FileError ())
