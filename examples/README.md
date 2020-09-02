@@ -7,6 +7,10 @@ The following examples assume that your first step was to enter the `examples` d
   It is most directly ran by typing `idris2 -p streaming File.idr --exec main`  
   Alternatively you can type `idris2 --repl examples.ipkg` and then `:module File` and finally `:exec main`
 
+* `Base64.idr` is a test of stream encoding/decoding on known and unknown data.  
+  It is most directly ran by typing `idris2 -p streaming Base64.idr --exec main`  
+  Alternatively you can type `idris2 --repl examples.ipkg` and then `:module Base64` and finally `:exec main`
+
 * `Network.idr` has an example of connecting to a website and streaming the results to stdout and a file at the same time.  
 It is most directly ran by typing `idris2 -p network -p streaming Network.idr --exec main`  
 Alternatively you can type `idris2 --repl examples.ipkg` and then `:module Network` and finally `:exec main`

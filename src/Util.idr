@@ -61,6 +61,13 @@ withFile file mode act = do Right f <- openFile file mode
                             pure (Right r)
 
 export
+withFile' : HasIO io => String -> Mode -> (Either FileError File -> io a) -> io a
+withFile' file mode act = do res <- openFile file mode
+                             a <- act res
+                             either (\_ => pure a)
+                                    (\f => pure a <* closeFile f) res
+
+export
 on : (b -> b -> c) -> (a -> b) -> a -> a -> c
 on f g x y = g x `f` g y
 
@@ -100,3 +107,11 @@ leadingBits b0 = count (cast b0) 7
 export
 bits8ToChar : Bits8 -> Char
 bits8ToChar = cast . cast {to=Int}
+
+export
+Range Char where
+  rangeFromTo x y = cast <$> rangeFromTo {a=Int} (cast x) (cast y)
+  rangeFromThenTo x y z
+    = cast <$> rangeFromThenTo {a=Int} (cast x) (cast y) (cast z)
+  rangeFrom x = cast <$> rangeFrom {a=Int} (cast x)
+  rangeFromThen x y = cast <$> rangeFromThen {a=Int} (cast x) (cast y)

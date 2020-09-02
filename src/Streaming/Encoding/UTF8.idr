@@ -3,12 +3,6 @@ module Streaming.Encoding.UTF8
 import Streaming.Internal as S
 import Streaming.API as S
 
-import Data.Functor.Of
-
-import System.File
-
-import Data.Strings
-
 import Util
 
 export
@@ -46,11 +40,11 @@ decodeUtf8 str0 = effect $ do
       0 => pure $ wrap (bits8ToChar b :> decodeUtf8 str) -- need Delay?
       1 => pure . pure . Left $ InvalidStartByte b
       x => let x' = x - 1 in
-           str &$ splitsAt' x'
+           str &$ splitsAt x'
                |> store ( maps cast -- Move to Int
                        |> cons (maskMarker x' b) -- add lead bit to stream front
-                       |> S.fold collect (0,0) -- combine stream's bits
-                       |> map (first snd)) -- extract final Int
+                       |> S.foldl collect 0) -- combine stream's bits
+                       -- |> map (first snd)) -- extract final Int
                |> S.all ((1 ==) . leadingBits) -- requisit bits matched?
                |> \res => do
                     True :> n :> s <- res
@@ -59,14 +53,11 @@ decodeUtf8 str0 = effect $ do
                       then pure . Left $ CodepointOutOfRange
                       else wrap (cast n :> decodeUtf8 s)
   where -- 😀 = \128512 = 0x1F600
-    maskFollower : Int -> Int
-    maskFollower b = b .&. 0x3F
-
     maskMarker : (c : Int) -> Bits8 -> Int
     maskMarker c b = shiftL (shiftR 0xFF (c+3) .&. cast b) (6 * c+1)
 
-    collect : Int -> (Int, Int) -> (Int, Int)
-    collect x (n,acc) = (n+1, acc .|. shiftL (maskFollower x) (6*n))
+    collect : Int -> Int -> Int
+    collect acc x = shiftL acc 6 .|. (x .&. 0x3F)
 
 private
 %inline
@@ -93,16 +84,6 @@ encode c = let ic = ord c
     shiftedBytes : Int -> Stream (Of Bits8) m r
     shiftedBytes x
       = maps (\b => cast (0x80 .|. (b .&. 0x3F))) (iterate (`shiftR`6) x)
-
-    -- O(min(3,n)) space
-    -- Not quite sure about its execution complexity with the naive rev style
-    -- Reversing the stream seemed easier than counting down for shifting.
-    rev : Stream (Of Bits8) m r -> Stream (Of Bits8) m r
-    rev str0 = effect $ do
-      Right (x :> str) <- inspect str0
-        | Left l => pure . pure $ l
-      pure $ rev str <* yield x
-
     -- Set up the starting byte that encodes what bytes follow:
     -- The count of leading 1's, terminated by a 0, says how many parts a
     -- codepoint has, e.g. codepoint 128512 is a 4 byte codepoint, it happens
@@ -120,7 +101,7 @@ encode c = let ic = ord c
     -- Combine our starting byte and the shifted follower bytes.
     enc : (n : Int) -> (ic : Int) -> Stream (Of Bits8) m ()
     enc n ic = encstart n ic
-                     `cons` rev (take' {r=()} (n - 1) (shiftedBytes ic))
+                     `cons` rev (take {r=()} (n - 1) (shiftedBytes ic))
 
 export
 encodeUtf8 : Monad m => Stream (Of Char) m r

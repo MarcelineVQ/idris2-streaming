@@ -125,3 +125,13 @@ unpack str = unpack' (prim__cast_IntegerInt (natToInteger (length str)) - 1) str
         = if pos < 0
              then acc
              else assert_total $ unpack' (pos - 1) str (assert_total (prim__strIndex str pos)::acc)
+
+export
+zipWith : (a -> b -> c) -> LazyList a -> LazyList b -> LazyList c
+zipWith f (x :: xs) (y :: ys) = f x y :: zipWith f xs ys
+zipWith _ _ _ = []
+
+export
+%inline
+zip : LazyList a -> LazyList b -> LazyList (a,b)
+zip = zipWith MkPair

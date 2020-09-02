@@ -14,8 +14,9 @@ import public Data.Functor.Compose
 
 import Control.Monad.Managed
 
--- Do I need stream fusion? If everything I do is a 'step' then what is there to fuse?
--- Sure it should help for operations on the result type, but does it help for the stream state?
+-- Do I need builder-style stream fusion? If everything I do is a 'step' then
+-- what is there to fuse? Sure it should help for operations on the result type,
+-- but does it help for the stream state?
 
 ||| A neat bonus to the Build constructor is that we don't have to 'case' as
 ||| often when writing our functions because we can just farm out to Build which
@@ -24,6 +25,7 @@ import Control.Monad.Managed
 public export
 data Stream : (f : Type -> Type) -> (m : Type -> Type) -> Type -> Type where
   Return : (1 _ : r) -> Stream f m r
+  ||| This is probably too strict right now, Step is strict in haskell but Effect is not
   Effect : (1 _ : m (Stream f m r)) -> Stream f m r
   Step : (1 _ : f (Stream f m r)) -> Stream f m r
   ||| Fusion constructor
@@ -35,7 +37,7 @@ data Stream : (f : Type -> Type) -> (m : Type -> Type) -> Type -> Type where
 %name Streaming.Internal.Stream str,str2,str3
 
 export
-streamBuild : (forall b . (r -> b) -> (m b -> b) -> (f b -> b) -> b)
+streamBuild : (forall b. (r -> b) -> (m b -> b) -> (f b -> b) -> b)
            -> Stream f m r
 streamBuild = \phi => phi Return Effect Step
 
@@ -48,6 +50,8 @@ streamFold done effect construct (Effect x)
 streamFold done effect construct (Step x)
   = construct (streamFold done effect construct <$> x)
 streamFold done effect construct (Build g) = g done effect construct
+
+-- %transform "dsfsdf" streamFold return_ effect_ step_ (streamBuild psi) = psi return_ effect_ step_
 
 export
 destroy : (Functor f, Monad m)
@@ -86,17 +90,10 @@ public export -- public, we're exporting Stream currently anyway
 effect : (Functor f, Monad m) => m (Stream f m r) -> Stream f m r
 effect = Effect
 
--- Does this inspect make sense?
 export
 inspect : (Functor f, Monad m)
        => Stream f m r -> m (Either r (f (Stream f m r)))
--- inspect (Return x) = pure (Left x)
--- inspect (Effect x) = x >>= inspect
--- inspect (Step x) = pure (Right x)
--- inspect (Build g) = inspect (streamBuild g)
--- If I understand correctly {f} {m} here are still erased, since we're just
--- passing it along in types and we've not bound them in the type sig.
-inspect {f} {m} str
+inspect str
   = streamFold
       (pure . Left)
       join
@@ -150,13 +147,6 @@ export
 hoist : (Functor f, Monad m)
     => (forall x. m x -> n x) -> Stream f m r -> Stream f n r
 hoist f str = Build (\r,eff,step => streamFold r (eff . f) step str)
-
-export
--- | @for@ replaces each element of a stream with an associated stream. Note that the
--- associated stream may layer any functor.
-for : (Monad m, Functor f) => Stream (Of a) m r -> (a -> Stream f m x) -> Stream f m r
-for str act = Build (\r,eff,step => streamFold r eff
-  (\(a :> rest) => streamFold r eff step (act a *> for str act)) str)
 
 export
 decompose : (Functor f, Monad m)
@@ -218,3 +208,13 @@ public export
 (Functor f, MonadState s m) => MonadState s (Stream f m) where
   get = lift get
   put s = lift (put s)
+
+||| Run stream1 then stream2, <+> the results of each.
+public export
+(Semigroup r, Functor f, Monad m) => Semigroup (Stream f m r) where
+  str <+> str2 = Build (\r,eff,step => streamFold (\v => streamFold (r . (v <+>))
+                         eff step str2) eff step str)
+
+public export
+(Monoid r, Functor f, Monad m) => Monoid (Stream f m r) where
+  neutral = pure neutral

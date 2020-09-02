@@ -79,3 +79,7 @@ MonadManaged Managed where
 public export
 MonadManaged m => MonadManaged (StateT s m) where
   use x = lift (use x)
+
+public export
+MonadManaged m => MonadManaged (EitherT e m) where
+  use x = lift (use x)

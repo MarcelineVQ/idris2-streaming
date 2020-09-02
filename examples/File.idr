@@ -49,6 +49,6 @@ main = do
           -- mismatch between a code point Char and 'c char'. Strings don't
           -- exhibit this issue.
           -- |> map (either show show)
-          |> S.fold strCons "" >>= putStrLn . fstOf
+          |> S.foldr strCons "" >>= putStrLn . fstOf
       | Left err => printLn $ "File error: " ++ filename ++ ", " ++ show err
     pure ()
