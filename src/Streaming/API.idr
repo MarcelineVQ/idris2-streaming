@@ -131,6 +131,10 @@ export
 yield : Monad m => a -> Stream (Of a) m ()
 yield x = cons x empty
 
+-- Stream (Of )
+
+-- yields : f a -> Stream (Of a) m r
+
 -- 'each' of these could simply be Foldable if Foldable's foldr wasn't so strict
 
 export

@@ -1,0 +1,7 @@
+[submodule "libs/managed"]
+	path = libs/managed
+	url = https://github.com/MarcelineVQ/idris2-managed
+
+[submodule "libs/curl"]
+	path = libs/curl
+	url = https://github.com/MarcelineVQ/idris2-curl

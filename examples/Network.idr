@@ -97,7 +97,9 @@ main = runManaged $ do
       0 <- lift $ connect sock addr 80
         | err => throwE (ConnectError err)
       lift $ first SendError <$> send sock msg
-      lift $ S.stdoutChrLn' (maps charCast (streamnet sock))
+      lift $ streamnet sock
+          &$ maps charCast
+          |> S.stdoutChrLn'
       pure () -- helps type inferrence
     either (putStrLn . showError) pure res
   where

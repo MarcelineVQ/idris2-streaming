@@ -20,10 +20,6 @@ import Data.List as L -- reverse
    This is written in a 'forward' style to follow along with the steps the
    stream takes. One could as easily use . and $ and write this in regular
    'reverse' style Idris/Haskell composition.
-
-   I expect file primitives to eventually provide Bits8 rather than Char as they
-   do now, in the mean time we cast to Bits8. This is currently correct to do as
-   these are really a 'c char' which is 8 bits.
 -}
 -------------------------------------------------
 
@@ -32,23 +28,22 @@ main : IO ()
 main = do
     let filename = "text.txt"
     Right res <- readFile filename
-      | Left err => printLn $ "File error: " ++ filename ++ ", " ++ show err
+      | Left err => fileBad filename err
     putStrLn res
-    Right _ <- withFile filename Read $ \f => do
-        B.byteFromFile f {io=IO}
-          &$ decodeUtf8
-          |> encodeUtf8 -- encoding test, temporary
-          |> decodeUtf8 -- encoding test, temporary
-          |> C.lines
-          |> S.mapf (C.words
-                  |> S.mapf (S.toList |> map (first reverse) |> S.fromList')
-                  |> C.unwords)
-          |> C.unlines
-          -- We collect the Chars into a String here instead of just piping them
-          -- to stdout because idris backend has some issues right now with a
-          -- mismatch between a code point Char and 'c char'. Strings don't
-          -- exhibit this issue.
-          -- |> map (either show show)
-          |> S.foldr strCons "" >>= putStrLn . fstOf
-      | Left err => printLn $ "File error: " ++ filename ++ ", " ++ show err
+    B.bits8FromFile' filename
+      &$ decodeUtf8
+      |> encodeUtf8 -- encoding roundtripping test, temporary
+      |> decodeUtf8 -- encoding roundtripping test, temporary
+      |> C.lines
+      |> S.mapf (C.words |> S.mapf S.rev |> C.unwords)
+      |> C.unlines
+      -- We collect the Chars into a String here instead of just piping them
+      -- to stdout because the idris backend for printing has some issues
+      -- right now with non-ascii Chars. Strings don't exhibit this issue.
+      -- More directly single-Char printing uses putchar which on the c-side
+      -- casts from int to char which is lossy.
+      |> S.foldr strCons "" >>= putStrLn . fstOf
     pure ()
+  where
+    fileBad : String -> FileError -> IO ()
+    fileBad fname err = printLn $ "File error: " ++ fname ++ ", " ++ show err

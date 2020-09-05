@@ -76,7 +76,7 @@ stdoutChrLn str = do
   fflush stdout
 
 export
-stdoutChrLn' : HasIO io => Stream (Of Char) io a -> io a
+stdoutChrLn' : HasIO io => Stream (Of Char) io r -> io r
 stdoutChrLn' str = do
   r <- streamFold pure join (\(s :> act) => putChar s *> act) str
   putChar '\n'

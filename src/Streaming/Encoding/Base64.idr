@@ -23,13 +23,12 @@ import Util
 
 import Language.Reflection
 
+import public Streaming.Encoding.Base64.Alphabet
 
 
--- base64 is an encoding _from_ binary data to a restricted alphabet of ascii
--- characters. Represented here by Char.
-
--- utf-8 encodes a unicode codepoint to binary
--- bits64 encodes binary to a restricted ascii alphabet
+-- base64 is an encoding _from_ binary data _to_ binary data matching a
+-- restricted alphabet of characters.
+-- https://tools.ietf.org/rfc/rfc4648#section-1
 
 export
 data EncodeError = CodepointOutOfRange
@@ -50,28 +49,6 @@ Show DecodeError where
   show (CharNotInAlphabet x) = "CharNotInAlphabet: " ++ show x
   show DataEndedEarly = "Encoded data ended early"
   show TooMuchPadding = "TooMuchPadding"
-
-data Bits6 : Type where
-  B6 : Bits8 -> Bits6
-
--- Alphabets MUST BE 64 characters, 0-63 not including pad, this is the base64.
-record Alphabet where
-  constructor MkAlphabet
-  toChar : Int -> Char -- to/from the 64
-  fromChar : Char -> Maybe Int -- to/from the 64
-  pad : Char -- not part of the 64
-  whitespace : Char -> Bool -- not part of the 64
-
--- Can I precompile this into an array?
-export
-standardAlphabet : Alphabet
-standardAlphabet
-  = let alph = zip [0..63] $ ['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ ['+','/']
-    in MkAlphabet
-         (\i => maybe 'A' id (lookup i alph))
-         (\c => fst <$> find ((== c) . snd) alph)
-         '='
-         (`elem` ['\n','_'])
 
 -- base64 can't have a decode error because it pads missing bits.
 export

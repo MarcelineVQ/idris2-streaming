@@ -77,20 +77,32 @@ fromString' str = each''' (unpack str)
 toString' : Monad m => Stream (Of Char) m r -> m String
 toString' = S.foldr_ strCons ""
 
--- String is expected to be comprised of Chars from the standardAlphabet for this test
+-- Making it easy to change for testing
+alphabet : Alphabet
+alphabet = standardAlphabet
+
+-- The Strings used here are expected to be comprised of ascii data for this test
 roundtrip : String -> String
 roundtrip s = fromString' s
            &$ maps (cast . ord)
-           |> encodeBase64 standardAlphabet
-           |> decodeBase64 standardAlphabet
+           |> encodeBase64 alphabet
+           |> decodeBase64 alphabet
            |> maps (chr . cast)
            |> runIdentity . toString'
+
+roundtrip' : String -> String
+roundtrip' s = fromString' s &$
+               maps (cast . ord) |>
+               encodeBase64 alphabet |>
+               decodeBase64 alphabet |>
+               maps (chr . cast) |>
+               runIdentity . toString'
 
 -- encode and check against our specific rfc reference strings
 enc : String -> String -> Bool
 enc s1 s2 = fromString' s1
          &$ maps (cast . ord) -- turn to Bits8
-         |> encodeBase64 standardAlphabet
+         |> encodeBase64 alphabet
          |> maps (chr . cast) -- back to Char
          |> toString'
          |> (== s2) . runIdentity
@@ -98,16 +110,16 @@ enc s1 s2 = fromString' s1
 -- using Managed for fun, it's not really that useful for just one 'withFoo'
 randoStr : Stream (Of Bits8) Managed (Either FileError ())
 randoStr = effect $ do
-  Right rand <- use . managed $ withFile' "/dev/urandom" Read
+  Right rand <- use . managed $ withFile "/dev/urandom" Read
     | Left err => pure . pure $ Left err
-  pure $ byteFromFile {io=Managed} rand *> pure (Right ())
+  pure $ bits8FromFile {io=Managed} rand *> pure (Right ())
 
 rando : Monad m => Stream (Of Bits8) m r -> m Bool
 rando str = str
-     &$ take 1000
+     &$ take 3000
      |> copy
-     |> encodeBase64 standardAlphabet
-     |> decodeBase64 standardAlphabet
+     |> encodeBase64 alphabet
+     |> decodeBase64 alphabet
      |> S.toList -- encoded/decoded data
      |> S.toList -- original data
      |> map (\(enc :> orig) => zipWith (==) enc (fstOf orig)) -- compare them
@@ -137,9 +149,9 @@ main = do
     putStrLn $ "st6 roundtrips: " ++ show (roundtrip test_str6_ref == test_str6_ref)
     putStrLn $ "st7 roundtrips: " ++ show (roundtrip test_str7_ref == test_str7_ref)
 
-    -- slowslowslow, but the encoder works and the memory is good
+    -- slowslowslow, but the encoder works and the memory use is consistent
+    -- It'd be nice to track down which part is slow with this.
     runManaged $ do
       r <- rando randoStr
-      putStrLn $ "/dev/urandom data rountripped: " ++ show r
+      putStrLn $ "/dev/urandom data roundtripped: " ++ show r
     pure ()
-

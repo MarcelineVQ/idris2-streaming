@@ -53,19 +53,11 @@ monus k Z = k
 monus (S k) (S j) = k `monus`j
 
 export
-withFile : HasIO io => String -> Mode -> (File -> io a) -> io (Either FileError a)
-withFile file mode act = do Right f <- openFile file mode
-                              | Left err => pure (Left err)
-                            r <- act f
-                            closeFile f
-                            pure (Right r)
-
-export
-withFile' : HasIO io => String -> Mode -> (Either FileError File -> io a) -> io a
-withFile' file mode act = do res <- openFile file mode
-                             a <- act res
-                             either (\_ => pure a)
-                                    (\f => pure a <* closeFile f) res
+withFile : HasIO io => String -> Mode -> (Either FileError File -> io a) -> io a
+withFile file mode act = do res <- openFile file mode
+                            a <- act res
+                            either (\_ => pure a)
+                                   (\f => pure a <* closeFile f) res
 
 export
 on : (b -> b -> c) -> (a -> b) -> a -> a -> c
