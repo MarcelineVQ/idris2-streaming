@@ -11,34 +11,35 @@ bugtracker = "https://github.com/MarcelineVQ/idris2-streaming/issues"
 license    = "CC0 (refer to LICENSE file)"
 brief      = "Effectful Streaming for Idris"
 modules =
-       -- Public
-          Streaming
-        , Streaming.Streams
-        , Streaming.Bytes
-        , Streaming.Char
-        , Streaming.Encoding.UTF8
-        , Streaming.Encoding.Base64
-        , Streaming.Encoding.Base64.Alphabet
-        
-        , Streaming.Network.Curl
+ -- Public
+    Streaming
+  , Streaming.Streams
+  , Streaming.Bytes
+  , Streaming.Char
+  , Streaming.Encoding.UTF8
+  , Streaming.Encoding.Base64
+  , Streaming.Encoding.Base64.Alphabet
 
-        , Data.Functor.Of
-        , Data.Functor.Compose
-        , Data.Bifunctor
+  , Streaming.Network.Curl
 
-        , Data.AVL
+  , Data.Functor.Of
+  , Data.Functor.Compose
+  , Data.Bifunctor
 
-        , Data.Proxy
-        , Data.LazyList
+  , Data.AVL
 
-       -- Internal
-        , Streaming.API
-        , Streaming.Internal
+  , Data.Proxy
+  , Data.LazyList
 
-        , Util -- Don't expect this one to always exist.
+ -- Internal
+  , Streaming.API
+  , Streaming.Internal
+
+  , Util -- Don't expect this one to always exist.
 
 sourcedir = "src"
 
 main = Streaming
 
-depends = base, contrib, managed, network, curl
+depends = base, contrib, network
+        , managed, curl

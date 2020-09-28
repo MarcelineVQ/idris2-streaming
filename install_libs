@@ -1,14 +1,10 @@
-git submodule init
-git submodule update
-
+git submodule update --init
 cd libs
 
 cd managed
-idris2 --clean managed.ipkg && idris2 --build managed.ipkg
-idris2 --install managed.ipkg && idris2 --clean managed.ipkg
+idris2 --clean managed.ipkg && idris2 --install managed.ipkg
 cd ..
 
 cd curl
-idris2 --clean curl.ipkg && idris2 --build curl.ipkg
-idris2 --install curl.ipkg && idris2 --clean curl.ipkg
+idris2 --clean curl.ipkg && idris2 --install curl.ipkg
 cd ..
