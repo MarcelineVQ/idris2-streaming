@@ -9,7 +9,7 @@ On top of general streaming, this package's intent is to provide a basis to stre
 
 Examples are available as a package in the `examples` directory.
 
-Required libs are included as submodules for your convenience. You can type run `./install_libs` to fetch and install them.
+Required libs are included as submodules for your convenience. You can type `./install_libs` to fetch and install them.
 
 TODO
 ----

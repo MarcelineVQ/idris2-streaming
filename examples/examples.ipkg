@@ -1,7 +1,7 @@
 package examples
 
 authors    = "MarcelineVQ"
-version    = "0.4.2.1"
+version    = "0.5.2.1"
 readme     = "README.md"
 
 homepage   = "https://github.com/MarcelineVQ/idris2-streaming"
@@ -20,4 +20,4 @@ prebuild = "idris2 --clean examples.ipkg && cd .. && idris2 --clean streaming.ip
 
 -- main = Streaming
 
-depends = base, contrib, network, streaming, curl
+depends = base, contrib, network, streaming, managed, curl

@@ -4,12 +4,7 @@ import Control.Monad.Trans
 import Control.Monad.Reader
 import Control.Monad.State
 
-import Data.Functor.Compose
-import Data.Functor.Of
-import Data.Bifunctor
-
 import public Data.Functor.Of
-import public Data.Bifunctor
 import public Data.Functor.Compose
 
 import Control.Monad.Managed
@@ -140,7 +135,7 @@ export
 ||| map(s): Target (s)tream _values_ of `Stream (Of s) m r`.
 maps : Monad m
     => (a -> b) -> Stream (Of a) m r -> Stream (Of b) m r
-maps f s = mapf (first f) s
+maps f s = mapf (mapFst f) s
 
 export
 ||| map(f)M: Effectfully target the (f)unctor of `Stream f M r`.

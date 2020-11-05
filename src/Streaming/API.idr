@@ -58,7 +58,7 @@ foldl f acc (Build g) = foldl f acc (streamBuild g)
 export
 foldr : Monad m => (a -> b -> b) -> b -> Stream (Of a) m r -> m (Of b r)
 foldr f acc = streamFold (\r => pure (acc :> r)) join
-               (\(a :> rest) => first (f a) <$> rest)
+               (\(a :> rest) => mapFst (f a) <$> rest)
 
 export
 foldr_ : Monad m => (a -> b -> b) -> b -> Stream (Of a) m r -> m b
@@ -79,7 +79,7 @@ foldrM f acc = streamFold (\r => (:> r) <$> acc) join
 
 export -- our fold is foldl so we make a dlist
 toList : Monad m => Stream (Of a) m r -> m (Of (List a) r)
-toList str = first ($ []) <$> foldl (\diff,a,ls => diff (a :: ls)) id str
+toList str = mapFst ($ []) <$> foldl (\diff,a,ls => diff (a :: ls)) id str
 
 ||| Run an action on each element of a stream and reyield them, this is quite
 ||| useful for debug priting of stream values as you work on them.
