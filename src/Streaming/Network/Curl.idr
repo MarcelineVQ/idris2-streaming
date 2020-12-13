@@ -29,9 +29,9 @@ streamCallback ref str s len _ = toPrim $ do
 
 mGlobalInit : Managed CurlECode
 mGlobalInit = managed $ \f => do
-  ctx <- curl_global_init
+  ctx <- curlGlobalInit
   r <- f ctx
-  curl_global_cleanup
+  curlGlobalCleanup
   pure r
 
 mEasyInit : Managed (Maybe (CurlHandle Easy))
